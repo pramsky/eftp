@@ -62,7 +62,42 @@ defmodule Eftp.Client do
         {:error, reason}
       _ ->
         :ftp.type(pid, :binary)
-        :ftp.recv(pid, '#{remote_filename}', '#{local_filename}')
+        case File.exists?("#{local_filename}") do
+          false ->
+            case :ftp.recv(pid, '#{remote_filename}', '#{local_filename}') do
+              :ok -> :ok
+              {:error, reason} ->
+                File.rm("#{local_filename}")
+                {:error, reason}
+            end
+          true ->
+            File.rename("#{local_filename}", "#{local_filename}-#{unixtime()}.backup")
+            fetch(pid, remote_filename)
+        end
     end
+  end
+
+  @doc """
+  Fetches a list of files from the server
+  """
+  def fetch(pid, files) when is_list(files) do
+    case pid do
+      {:error, reason} ->
+        {:error, reason}
+      _ ->
+        for file <- files do
+          case fetch(pid, "#{file}") do
+            :ok -> :ok
+            {:error, reason} ->
+              {:error, reason}
+          end
+        end
+    end
+  end
+
+  #-- private --#
+  # generate a unix timestamp in case we need to rename files
+  defp unixtime() do
+    :os.system_time(:seconds)
   end
 end
