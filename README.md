@@ -20,3 +20,11 @@ Eftp.connect("ftp.example.net", "21")
 |> Eftp.authenticate("foo", "bar")
 |> Eftp.fetch("example.csv")
 ```
+
+To authenticate and download a list of files `example.csv`, `users.csv`
+
+```elixir
+Eftp.connect("ftp.example.net", "21")
+|> Eftp.authenticate("foo", "bar")
+|> Eftp.fetch(["example.csv", "users.csv"])
+```

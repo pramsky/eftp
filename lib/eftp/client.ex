@@ -25,8 +25,15 @@ defmodule Eftp.Client do
   FTP Client functions
   """
 
-  @doc ~S"""
-  Connects to an FTP server
+  @doc """
+  Connects to an FTP server. If successful returns a PID. This pid will be passed to
+  the authenticate command.
+
+  ## Example
+    ```elixir
+    iex> Eftp.Client.connect("ftp.example.net", "21")
+    #PID<0.158.0>
+    ```
   """
   def connect(host, port \\ 21) do
     :inets.start
@@ -39,7 +46,19 @@ defmodule Eftp.Client do
   end
 
   @doc """
-  Authenticate against an ftp server
+  Authenticate against an ftp server. If successful returns a pid. This pid will be
+  passed to the fetch commands
+
+  ## Example
+    ```elixir
+    iex> Eftp.Client.connect("ftp.example.net", "21")
+         |> Eftp.Client.authenticate("foo", "bar")
+    #PID<0.158.0>
+
+    OR
+
+    {:error, :invalid_auth}
+    ```
   """
   def authenticate(pid, username, password) do
     case :ftp.user(pid, '#{username}', '#{password}') do
@@ -52,7 +71,15 @@ defmodule Eftp.Client do
   end
 
   @doc """
-  Fetch a specific file from the server
+  Fetch a specific file from the server. A list of file names can also be passed
+  and each will be downloaded
+
+  ## Example
+    ```elixir
+    iex> Eftp.Client.connect("ftp.example.net", "21")
+         |> Eftp.Client.authenticate("foo", "bar")
+         |> Eftp.Client.fetch("example.txt")
+    ```
   """
   def fetch(pid, remote_filename) when is_binary(remote_filename) do
     local_filename = "priv/fetched/#{remote_filename}"
@@ -79,6 +106,20 @@ defmodule Eftp.Client do
 
   @doc """
   Fetches a list of files from the server
+
+  ## Example
+    ```elixir
+    iex> Eftp.Client.connect("ftp.example.net", "21")
+         |> Eftp.Client.authenticate("foo", "bar")
+         |> Eftp.Client.fetch("example.txt")
+    :ok
+    ```
+    ```elixir
+    iex> Eftp.Client.connect("ftp.example.net", "21")
+         |> Eftp.Client.authenticate("foo", "bar")
+         |> Eftp.Client.fetch(["example.txt", "example2.txt"])
+    [:ok, :ok]
+    ```
   """
   def fetch(pid, files) when is_list(files) do
     case pid do
