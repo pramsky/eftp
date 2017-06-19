@@ -1,6 +1,6 @@
 # Eftp
 
-**TODO: Add description**
+A Simple FTP Client based on :inets
 
 ## Installation
 
