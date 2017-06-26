@@ -81,8 +81,9 @@ defmodule Eftp.Client do
          |> Eftp.Client.fetch("example.txt")
     ```
   """
-  def fetch(pid, remote_filename) when is_binary(remote_filename) do
-    local_filename = "priv/fetched/#{remote_filename}"
+  def fetch(pid, remote_filename, fetch_dir) when is_binary(remote_filename) do
+    # set our destination file
+    local_filename = "#{fetch_dir}/#{remote_filename}"
 
     case pid do
       {:error, reason} ->
@@ -99,7 +100,7 @@ defmodule Eftp.Client do
             end
           true ->
             File.rename("#{local_filename}", "#{local_filename}-#{unixtime()}.backup")
-            fetch(pid, remote_filename)
+            fetch(pid, remote_filename, fetch_dir)
         end
     end
   end
@@ -121,13 +122,13 @@ defmodule Eftp.Client do
     [:ok, :ok]
     ```
   """
-  def fetch(pid, files) when is_list(files) do
+  def fetch(pid, files, fetch_dir) when is_list(files) do
     case pid do
       {:error, reason} ->
         {:error, reason}
       _ ->
         for file <- files do
-          case fetch(pid, "#{file}") do
+          case fetch(pid, "#{file}", fetch_dir) do
             :ok -> :ok
             {:error, reason} ->
               {:error, reason}
