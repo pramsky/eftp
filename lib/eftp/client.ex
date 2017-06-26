@@ -78,7 +78,7 @@ defmodule Eftp.Client do
     ```elixir
     iex> Eftp.Client.connect("ftp.example.net", "21")
          |> Eftp.Client.authenticate("foo", "bar")
-         |> Eftp.Client.fetch("example.txt")
+         |> Eftp.Client.fetch("example.txt", "/tmp")
     ```
   """
   def fetch(pid, remote_filename, fetch_dir) when is_binary(remote_filename) do
@@ -112,13 +112,13 @@ defmodule Eftp.Client do
     ```elixir
     iex> Eftp.Client.connect("ftp.example.net", "21")
          |> Eftp.Client.authenticate("foo", "bar")
-         |> Eftp.Client.fetch("example.txt")
+         |> Eftp.Client.fetch("example.txt", "/tmp")
     :ok
     ```
     ```elixir
     iex> Eftp.Client.connect("ftp.example.net", "21")
          |> Eftp.Client.authenticate("foo", "bar")
-         |> Eftp.Client.fetch(["example.txt", "example2.txt"])
+         |> Eftp.Client.fetch(["example.txt", "example2.txt"], "/tmp")
     [:ok, :ok]
     ```
   """

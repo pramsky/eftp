@@ -18,7 +18,7 @@ To authenticate and download the file `example.csv`
 ```elixir
 Eftp.connect("ftp.example.net", "21")
 |> Eftp.authenticate("foo", "bar")
-|> Eftp.fetch("example.csv")
+|> Eftp.fetch("example.csv", "/tmp")
 ```
 
 To authenticate and download a list of files `example.csv`, `users.csv`
@@ -26,5 +26,5 @@ To authenticate and download a list of files `example.csv`, `users.csv`
 ```elixir
 Eftp.connect("ftp.example.net", "21")
 |> Eftp.authenticate("foo", "bar")
-|> Eftp.fetch(["example.csv", "users.csv"])
+|> Eftp.fetch(["example.csv", "users.csv"], "/tmp")
 ```
