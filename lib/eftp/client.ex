@@ -22,21 +22,20 @@
 
 defmodule Eftp.Client do
   @moduledoc """
-  FTP Client functions
+  Ftp Client Functions
   """
 
   @doc """
-  Connects to an FTP server. If successful returns a PID. This pid will be passed to
-  the authenticate command.
+  Connects to an FTP Server. If successful, returns a PID. This pid will be
+  passed to the authenticate command
 
-  ## Example
-    ```elixir
-    iex> Eftp.Client.connect("ftp.example.net", "21")
-    #PID<0.158.0>
-    ```
+  ## Examples
+  ```elixir
+  iex> Eftp.Client.connect("ftp.example.net", 21)
+  #PID<0.158.0>
+  ```
   """
   def connect(host, port \\ 21) do
-    :inets.start
     case :inets.start(:ftpc, host: '#{host}', port: '#{port}', progress: true) do
       {:ok, pid} ->
         pid
@@ -46,89 +45,65 @@ defmodule Eftp.Client do
   end
 
   @doc """
-  Authenticate against an ftp server. If successful returns a pid. This pid will be
+  Authenticate against an ftp server. If successful, returns a PID. This pid will be
   passed to the fetch commands
 
-  ## Example
-    ```elixir
-    iex> Eftp.Client.connect("ftp.example.net", "21")
-         |> Eftp.Client.authenticate("foo", "bar")
-    #PID<0.158.0>
+  ## Examples
+  ```elixir
+  iex> Eftp.Client.authenticate("foo", "bar")
+  ```elixir
+  #PID<0.158.0>
 
-    OR
+  OR
 
-    {:error, :invalid_auth}
-    ```
+  {:error, :invalid_auth}
   """
   def authenticate(pid, username, password) do
     case :ftp.user(pid, '#{username}', '#{password}') do
       :ok -> pid
-      {:error, :euser} ->
-        {:error, :invalid_auth}
-      {:error, reason} ->
-        {:error, reason}
+      {:error, :euser} -> {:error, :invalid_auth}
+      {:error, reason} -> {:error, reason}
     end
   end
 
   @doc """
-  Fetch a specific file from the server. A list of file names can also be passed
-  and each will be downloaded
-
-  ## Example
-    ```elixir
-    iex> Eftp.Client.connect("ftp.example.net", "21")
-         |> Eftp.Client.authenticate("foo", "bar")
-         |> Eftp.Client.fetch("example.txt", "/tmp")
-    ```
+  Fetch a specific file from the server. A list of file names can also be passed and
+  each file will be downloaded
   """
-  def fetch(pid, remote_filename, fetch_dir) when is_binary(remote_filename) do
-    # set our destination file
-    local_filename = "#{fetch_dir}/#{remote_filename}"
-
+  def fetch(pid, remote_filename, local_directory) when is_binary(remote_filename) do
     case pid do
-      {:error, reason} ->
-        {:error, reason}
+      {:error, reason} -> {:error, reason}
       _ ->
-        :ftp.type(pid, :binary)
-        case File.exists?("#{local_filename}") do
+        dir = Path.dirname(remote_filename)
+        filename = Path.basename(remote_filename)
+        local_filename = "#{local_directory}/#{filename}"
+
+        case File.exists?(local_filename) do
           false ->
-            case :ftp.recv(pid, '#{remote_filename}', '#{local_filename}') do
+            :ftp.cd(pid, '#{dir}')
+            :ftp.type(pid, :binary)
+            case :ftp.recv(pid, '#{filename}', '#{local_filename}') do
               :ok -> :ok
               {:error, reason} ->
-                File.rm("#{local_filename}")
+                File.rm(local_filename)
                 {:error, reason}
             end
           true ->
-            File.rename("#{local_filename}", "#{local_filename}-#{unixtime()}.backup")
-            fetch(pid, remote_filename, fetch_dir)
+            File.rename(local_filename, "#{local_filename}-#{unixtime()}.backup")
+            fetch(pid, remote_filename, local_directory)
         end
     end
   end
 
   @doc """
-  Fetches a list of files from the server
-
-  ## Example
-    ```elixir
-    iex> Eftp.Client.connect("ftp.example.net", "21")
-         |> Eftp.Client.authenticate("foo", "bar")
-         |> Eftp.Client.fetch("example.txt", "/tmp")
-    :ok
-    ```
-    ```elixir
-    iex> Eftp.Client.connect("ftp.example.net", "21")
-         |> Eftp.Client.authenticate("foo", "bar")
-         |> Eftp.Client.fetch(["example.txt", "example2.txt"], "/tmp")
-    [:ok, :ok]
-    ```
+  Fetch list of files from the server
   """
-  def fetch(pid, files, fetch_dir) when is_list(files) do
+  def fetch(pid, files, local_directory) when is_list(files) do
     case pid do
-      {:error, reason} ->
-        {:error, reason}
+      {:error, reason} -> {:error, reason}
       _ ->
         for file <- files do
-          case fetch(pid, "#{file}", fetch_dir) do
+          case fetch(pid, "#{file}", local_directory) do
             :ok -> :ok
             {:error, reason} ->
               {:error, reason}
@@ -137,8 +112,20 @@ defmodule Eftp.Client do
     end
   end
 
-  #-- private --#
-  # generate a unix timestamp in case we need to rename files
+  @doc """
+  Retrieves list of files from the current directory
+  """
+  def list(pid) do
+    {:ok, files} = :ftp.nlist(pid)
+
+    files
+    |> List.to_string
+    |> String.split("\r\n")
+    |> Enum.reject(fn(x) -> x == "" end)
+  end
+
+
+  #-- PRIVATE --#
   defp unixtime() do
     :os.system_time(:seconds)
   end
