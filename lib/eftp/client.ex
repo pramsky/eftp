@@ -39,6 +39,7 @@ defmodule Eftp.Client do
     case :inets.start(:ftpc, host: '#{host}', port: '#{port}', progress: true) do
       {:ok, pid} ->
         pid
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -72,7 +73,9 @@ defmodule Eftp.Client do
   """
   def fetch(pid, remote_filename, local_directory) when is_binary(remote_filename) do
     case pid do
-      {:error, reason} -> {:error, reason}
+      {:error, reason} ->
+        {:error, reason}
+
       _ ->
         dir = Path.dirname(remote_filename)
         filename = Path.basename(remote_filename)
@@ -82,12 +85,16 @@ defmodule Eftp.Client do
           false ->
             :ftp.cd(pid, '#{dir}')
             :ftp.type(pid, :binary)
+
             case :ftp.recv(pid, '#{filename}', '#{local_filename}') do
-              :ok -> :ok
+              :ok ->
+                :ok
+
               {:error, reason} ->
                 File.rm(local_filename)
                 {:error, reason}
             end
+
           true ->
             File.rename(local_filename, "#{local_filename}-#{unixtime()}.backup")
             fetch(pid, remote_filename, local_directory)
@@ -100,11 +107,15 @@ defmodule Eftp.Client do
   """
   def fetch(pid, files, local_directory) when is_list(files) do
     case pid do
-      {:error, reason} -> {:error, reason}
+      {:error, reason} ->
+        {:error, reason}
+
       _ ->
         for file <- files do
           case fetch(pid, "#{file}", local_directory) do
-            :ok -> :ok
+            :ok ->
+              {:ok, "#{file}"}
+
             {:error, reason} ->
               {:error, reason}
           end
@@ -119,13 +130,24 @@ defmodule Eftp.Client do
     {:ok, files} = :ftp.nlist(pid)
 
     files
-    |> List.to_string
+    |> List.to_string()
     |> String.split("\r\n")
-    |> Enum.reject(fn(x) -> x == "" end)
+    |> Enum.reject(fn x -> x == "" end)
   end
 
+  @doc """
+  Retrieves list of files from the supplied directory
+  """
+  def list(pid, path) do
+    {:ok, files} = :ftp.nlist(pid, '#{path}')
 
-  #-- PRIVATE --#
+    files
+    |> List.to_string()
+    |> String.split("\r\n")
+    |> Enum.reject(fn x -> x == "" end)
+  end
+
+  # -- PRIVATE --#
   defp unixtime() do
     :os.system_time(:seconds)
   end

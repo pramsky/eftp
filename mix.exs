@@ -24,20 +24,22 @@ defmodule Eftp.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :eftp,
-     version: "0.1.0",
-     elixir: "~> 1.4",
-     build_embedded: Mix.env == :prod,
-     start_permanent: Mix.env == :prod,
-     deps: deps(),
-     name: "Eftp",
-     source_url: "https://github.com/Audian/eftp",
-     homepage_url: "http://github.com/Audian/eftp",
-     docs: [
-      main: "Eftp", # The main page in the docs
-      extras: ["README.md"]
+    [
+      app: :eftp,
+      version: "0.1.1",
+      elixir: "~> 1.4",
+      build_embedded: Mix.env() == :prod,
+      start_permanent: Mix.env() == :prod,
+      deps: deps(),
+      name: "Eftp",
+      source_url: "https://github.com/Audian/eftp",
+      homepage_url: "http://github.com/Audian/eftp",
+      docs: [
+        # The main page in the docs
+        main: "Eftp",
+        extras: ["README.md"]
+      ]
     ]
-   ]
   end
 
   # Configuration for the OTP application
@@ -45,8 +47,7 @@ defmodule Eftp.Mixfile do
   # Type "mix help compile.app" for more information
   def application do
     # Specify extra applications you'll use from Erlang/Elixir
-    [extra_applications: [:logger],
-     mod: {Eftp.Application, []}]
+    [extra_applications: [:logger], mod: {Eftp.Application, []}]
   end
 
   defp deps do
